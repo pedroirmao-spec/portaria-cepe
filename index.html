@@ -6,6 +6,7 @@
 <title>Portaria CEPE</title>
 <link rel="icon" type="image/png" href="logo-cepe.png" />
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --verde:#0f5132; --verde2:#157347; --verde-claro:#d1e7dd;
@@ -312,10 +313,55 @@
 <canvas id="canvas-captura" style="display:none"></canvas>
 
 <script>
+/* ===================== CONFIG DO BANCO (SUPABASE) ===================== */
+// Preencha com os dados do SEU projeto Supabase (Settings -> API).
+// Enquanto estiver vazio, o app funciona offline (dados só neste navegador).
+const SUPABASE_URL = '';      // ex.: https://xxxxxxxx.supabase.co
+const SUPABASE_ANON_KEY = ''; // ex.: eyJhbGciOi...  (chave "anon public")
+
 /* ===================== ARMAZENAMENTO ===================== */
 const KEY_V='pcepe_visitantes', KEY_U='pcepe_usuarios', KEY_S='pcepe_sessao';
-function getV(){return JSON.parse(localStorage.getItem(KEY_V)||'[]')}
-function setV(a){localStorage.setItem(KEY_V,JSON.stringify(a))}
+let CACHE_V = [];
+let SB = null;
+const USAR_BANCO = !!(SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase);
+if (USAR_BANCO) SB = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* Visitantes: com banco ligado, getV() lê o cache em memória (vindo do
+   Supabase); sem banco, cai no localStorage (modo offline por navegador). */
+function getV(){ return USAR_BANCO ? CACHE_V : JSON.parse(localStorage.getItem(KEY_V)||'[]'); }
+function setV(a){ if(USAR_BANCO){CACHE_V=a;} else {localStorage.setItem(KEY_V,JSON.stringify(a));} }
+
+function linhaDe(reg){ return {id:reg.id, cpf:reg.cpf||'', entrada:reg.entrada, saida:reg.saida, data:reg}; }
+async function carregarVisitantes(){
+  if(!USAR_BANCO) return;
+  const {data,error}=await SB.from('visitantes').select('data').order('entrada',{ascending:false});
+  if(error){console.error('Erro ao carregar visitantes:',error.message);return;}
+  CACHE_V=(data||[]).map(r=>r.data);
+}
+async function salvarRegistro(reg){
+  if(USAR_BANCO){
+    const {error}=await SB.from('visitantes').upsert(linhaDe(reg));
+    if(error){alert('Erro ao salvar no banco: '+error.message);throw error;}
+    const i=CACHE_V.findIndex(v=>v.id===reg.id);
+    if(i>=0)CACHE_V[i]=reg; else CACHE_V.unshift(reg);
+  } else { const arr=getV();const i=arr.findIndex(v=>v.id===reg.id);if(i>=0)arr[i]=reg;else arr.push(reg);setV(arr); }
+}
+async function salvarVarios(regs){
+  if(USAR_BANCO){
+    const {error}=await SB.from('visitantes').upsert(regs.map(linhaDe));
+    if(error){alert('Erro ao salvar no banco: '+error.message);throw error;}
+    CACHE_V=regs.concat(CACHE_V);
+  } else { setV(getV().concat(regs)); }
+}
+async function apagarTodos(){
+  if(USAR_BANCO){
+    const {error}=await SB.from('visitantes').delete().neq('id','');
+    if(error){alert('Erro ao apagar no banco: '+error.message);throw error;}
+    CACHE_V=[];
+  } else { setV([]); }
+}
+
+/* Login/usuários e sessão continuam locais (não vão para a base pública). */
 function getU(){let u=JSON.parse(localStorage.getItem(KEY_U)||'null');if(!u){u=[{nome:'Administrador',email:'admin@cepe.com',senha:'123456'}];localStorage.setItem(KEY_U,JSON.stringify(u))}return u}
 function setU(a){localStorage.setItem(KEY_U,JSON.stringify(a))}
 
@@ -340,16 +386,24 @@ function fazerCadastro(){
   localStorage.setItem(KEY_S,JSON.stringify({nome:n,email:e}));entrarApp();
 }
 function sair(){localStorage.removeItem(KEY_S);location.reload()}
-function entrarApp(){
+let pollTimer=null;
+async function entrarApp(){
   const s=JSON.parse(localStorage.getItem(KEY_S)||'null');if(!s)return;
   document.getElementById('tela-login').style.display='none';
   document.getElementById('app').style.display='block';
   document.getElementById('user-nome').textContent='👤 '+s.nome;
+  await carregarVisitantes();            // puxa os dados compartilhados do banco
   trocarAba('registrar');
+  // Atualiza automaticamente para refletir registros feitos em outras máquinas
+  if(USAR_BANCO && !pollTimer){
+    pollTimer=setInterval(async()=>{ await carregarVisitantes(); trocarAba(ABA_ATUAL); },15000);
+  }
 }
 
 /* ===================== NAVEGAÇÃO ===================== */
+let ABA_ATUAL='registrar';
 function trocarAba(aba){
+  ABA_ATUAL=aba;
   ['registrar','dentro','visitantes','dashboard'].forEach(a=>{
     document.getElementById('aba-'+a).classList.toggle('hidden',a!==aba);
   });
@@ -439,7 +493,7 @@ function limparFoto(){pararWebcam();fotoBase64='';document.getElementById('btn-c
 
 /* ===================== SALVAR ===================== */
 function val(id){return document.getElementById(id).value.trim()}
-function salvarVisitante(){
+async function salvarVisitante(){
   let ok=true;
   const setErr=(id,msg)=>{document.getElementById(id).textContent=msg;if(msg)ok=false};
   setErr('erro-nome', val('v-nome')?'':'Informe o nome');
@@ -460,7 +514,7 @@ function salvarVisitante(){
     entrouDeCarro:carro, placa:carro?val('v-placa'):'', modelo:carro?val('v-modelo'):'', cor:carro?val('v-cor'):'',
     entrada:new Date().toISOString(), saida:null
   };
-  const arr=getV();arr.push(reg);setV(arr);
+  await salvarRegistro(reg);
   limparFormulario();
   const ok2=document.getElementById('registro-ok');
   ok2.textContent='✓ Entrada registrada com sucesso!';
@@ -529,9 +583,9 @@ function preencherDeCadastro(cpfDig){
 }
 
 /* ===================== DENTRO AGORA ===================== */
-function registrarSaida(id){
-  const arr=getV();const v=arr.find(x=>x.id===id);
-  if(v && confirm('Registrar saída de '+v.nome+'?')){v.saida=new Date().toISOString();setV(arr);renderDentro()}
+async function registrarSaida(id){
+  const v=getV().find(x=>x.id===id);
+  if(v && confirm('Registrar saída de '+v.nome+'?')){v.saida=new Date().toISOString();await salvarRegistro(v);renderDentro()}
 }
 function fmtHora(iso){const d=new Date(iso);return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
 function fotoTd(v){return v.foto?'<img class="mini-foto" src="'+v.foto+'">':'<div class="mini-foto"></div>'}
@@ -652,14 +706,14 @@ function desenhar(id,tipo,labels,datasets,extra){
 }
 
 /* ===================== DADOS DE EXEMPLO ===================== */
-function gerarDadosExemplo(){
+async function gerarDadosExemplo(){
   if(!confirm('Gerar ~60 visitantes de exemplo para você visualizar os gráficos?'))return;
   const nomes=['Ana Souza','Carlos Lima','Marina Reis','João Pedro','Beatriz Alves','Rafael Costa','Juliana Dias','Pedro Henrique','Camila Rocha','Lucas Martins','Fernanda Gomes','Bruno Carvalho'];
   const emps=['Correios','Mercado Livre','Sabesp','Eletropaulo','Telefônica','Particular','Construtora ABC','TI Soluções',''];
   const mots=['Reunião','Entrega','Prestação de serviço','Manutenção','Visita pessoal','Entrevista'];
   const cores=['Prata','Preto','Branco','Vermelho','Azul'];
   const modelos=['Gol','Onix','HB20','Corolla','Strada','Kwid'];
-  const arr=getV();
+  const novos=[];
   for(let i=0;i<60;i++){
     const d=new Date();
     d.setDate(d.getDate()-Math.floor(Math.random()*330));
@@ -668,7 +722,7 @@ function gerarDadosExemplo(){
     const saiu=Math.random()<0.85;
     const saida=saiu?new Date(d.getTime()+(30+Math.random()*240)*60000).toISOString():null;
     const cpf=gerarCPFValido();
-    arr.push({
+    novos.push({
       id:'ex-'+Date.now()+'-'+i,
       nome:nomes[Math.floor(Math.random()*nomes.length)],
       cpf:cpf, rg:'', telefone:'',
@@ -680,7 +734,7 @@ function gerarDadosExemplo(){
       entrada:d.toISOString(), saida:saida
     });
   }
-  setV(arr);renderDashboard();
+  await salvarVarios(novos);renderDashboard();
   alert('60 visitantes de exemplo gerados! 📊');
 }
 function gerarCPFValido(){
@@ -693,8 +747,8 @@ function gerarPlaca(){
   const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';const r=a=>a[Math.floor(Math.random()*a.length)];
   return r(L)+r(L)+r(L)+Math.floor(Math.random()*10)+r(L+'0123456789')+Math.floor(Math.random()*10)+Math.floor(Math.random()*10);
 }
-function limparTudo(){
-  if(confirm('ATENÇÃO: isso apaga TODOS os visitantes registrados. Continuar?')){setV([]);renderDashboard();alert('Dados apagados.')}
+async function limparTudo(){
+  if(confirm('ATENÇÃO: isso apaga TODOS os visitantes registrados. Continuar?')){await apagarTodos();renderDashboard();alert('Dados apagados.')}
 }
 
 /* ===================== INÍCIO ===================== */
