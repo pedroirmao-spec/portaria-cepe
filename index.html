@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Portaria CEPE</title>
+<link rel="icon" type="image/png" href="logo-cepe.png" />
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --verde:#0f5132; --verde2:#157347; --verde-claro:#d1e7dd;
+    --bg:#f4f6f5; --card:#ffffff; --texto:#1f2937; --muted:#6b7280;
+    --borda:#e5e7eb; --vermelho:#dc2626; --amarelo:#f59e0b; --azul:#2563eb;
+    --sombra:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--texto);font-size:14px}
+  button{font-family:inherit;cursor:pointer}
+  input,select,textarea{font-family:inherit;font-size:14px}
+  .hidden{display:none!important}
+
+  /* ===== LOGIN ===== */
+  #tela-login{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#5cba8a,#9ad3b4)}
+  .login-card{background:#fff;border-radius:16px;padding:40px 36px;width:360px;box-shadow:0 10px 40px rgba(0,0,0,.2)}
+  .logo{width:90px;height:90px;display:flex;align-items:center;justify-content:center;margin:0 auto 12px}
+  .logo img{width:100%;height:100%;object-fit:contain}
+  .login-card h1{text-align:center;font-size:22px;color:var(--verde);margin-bottom:2px}
+  .login-card p.sub{text-align:center;color:var(--muted);margin-bottom:24px;font-size:13px}
+  .campo{margin-bottom:16px}
+  .campo label{display:block;font-weight:600;margin-bottom:6px;font-size:13px}
+  .campo input,.campo select,.campo textarea{width:100%;padding:10px 12px;border:1px solid var(--borda);border-radius:8px;outline:none}
+  .campo input:focus,.campo select:focus,.campo textarea:focus{border-color:var(--verde);box-shadow:0 0 0 3px var(--verde-claro)}
+  .btn{background:var(--verde);color:#fff;border:none;padding:11px 16px;border-radius:8px;font-weight:600;width:100%;font-size:15px}
+  .btn:hover{background:var(--verde2)}
+  .btn-sec{background:#fff;color:var(--verde);border:1px solid var(--verde)}
+  .btn-sec:hover{background:var(--verde-claro)}
+  .btn-sm{width:auto;padding:7px 12px;font-size:13px}
+  .btn-perigo{background:var(--vermelho)} .btn-perigo:hover{background:#b91c1c}
+  .erro-msg{color:var(--vermelho);font-size:12.5px;margin-top:5px;min-height:16px}
+  .link{color:var(--verde);text-align:center;display:block;margin-top:14px;font-size:13px;cursor:pointer;text-decoration:underline;background:none;border:none;width:100%}
+  .dica{background:#fffbeb;border:1px solid #fde68a;color:#92400e;font-size:12px;padding:8px 10px;border-radius:8px;margin-top:16px;text-align:center}
+
+  /* ===== APP ===== */
+  #app{display:none;min-height:100vh}
+  .topbar{background:var(--verde);color:#fff;display:flex;align-items:center;gap:14px;padding:0 20px;height:56px;position:sticky;top:0;z-index:10}
+  .topbar .logo-sm{width:36px;height:36px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  .topbar .logo-sm img{width:100%;height:100%;object-fit:cover}
+  .topbar h2{font-size:17px;font-weight:600}
+  .topbar .spacer{flex:1}
+  .topbar .user{font-size:13px;opacity:.9}
+  .topbar button{background:rgba(255,255,255,.15);color:#fff;border:none;padding:7px 12px;border-radius:7px;font-size:13px}
+  .topbar button:hover{background:rgba(255,255,255,.28)}
+  .nav{background:#fff;border-bottom:1px solid var(--borda);display:flex;gap:4px;padding:0 16px;position:sticky;top:56px;z-index:9;overflow-x:auto}
+  .nav button{background:none;border:none;padding:14px 16px;font-size:14px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent;white-space:nowrap}
+  .nav button.ativo{color:var(--verde);border-bottom-color:var(--verde)}
+  .nav button:hover{color:var(--verde)}
+  .conteudo{max-width:1180px;margin:0 auto;padding:24px 20px 60px}
+  .secao-titulo{font-size:20px;margin-bottom:4px;color:var(--texto)}
+  .secao-sub{color:var(--muted);margin-bottom:20px;font-size:13.5px}
+
+  .card{background:var(--card);border:1px solid var(--borda);border-radius:12px;padding:20px;box-shadow:var(--sombra);margin-bottom:20px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  .grid-form{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:760px){.grid2,.grid-form{grid-template-columns:1fr}}
+  .col-span{grid-column:1/-1}
+
+  /* Foto / webcam */
+  .foto-area{display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap}
+  .foto-preview{width:150px;height:150px;border-radius:12px;border:2px dashed var(--borda);background:#f9fafb;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:12px;text-align:center;overflow:hidden;flex-shrink:0}
+  .foto-preview img,.foto-preview video{width:100%;height:100%;object-fit:cover}
+  .foto-botoes{display:flex;flex-direction:column;gap:8px}
+
+  /* Tabela */
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--borda)}
+  th{background:#f9fafb;font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.3px}
+  tr:hover td{background:#f9fafb}
+  .tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+  .tag-dentro{background:#dcfce7;color:#166534}
+  .tag-saiu{background:#f3f4f6;color:#6b7280}
+  .mini-foto{width:38px;height:38px;border-radius:50%;object-fit:cover;background:#eee}
+
+  /* KPIs */
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px}
+  .kpi{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:16px 18px;box-shadow:var(--sombra)}
+  .kpi .num{font-size:28px;font-weight:700;color:var(--verde)}
+  .kpi .lbl{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .kpi.azul .num{color:var(--azul)} .kpi.amarelo .num{color:var(--amarelo)}
+
+  .barra-busca{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .barra-busca input{flex:1;min-width:200px;padding:10px 12px;border:1px solid var(--borda);border-radius:8px}
+  .vazio{text-align:center;color:var(--muted);padding:40px 20px}
+  .chart-box{position:relative;height:280px}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+  .checkbox-linha{display:flex;align-items:center;gap:8px;margin:6px 0}
+  .checkbox-linha input{width:auto}
+  .ok-msg{color:#166534;font-size:12.5px;margin-top:5px}
+</style>
+</head>
+<body>
+
+<!-- ================= LOGIN ================= -->
+<div id="tela-login">
+  <div class="login-card">
+    <div class="logo"><img src="logo-cepe.png" alt="CEPE" /></div>
+    <h1>Portaria CEPE</h1>
+    <p class="sub">Controle de acesso e visitantes</p>
+
+    <div id="form-login">
+      <div class="campo">
+        <label>E-mail</label>
+        <input type="email" id="login-email" placeholder="seu@email.com" />
+      </div>
+      <div class="campo">
+        <label>Senha</label>
+        <input type="password" id="login-senha" placeholder="••••••" />
+      </div>
+      <div class="erro-msg" id="login-erro"></div>
+      <button class="btn" onclick="fazerLogin()">Entrar</button>
+      <button class="link" onclick="mostrarCadastro()">Não tem conta? Cadastre-se</button>
+      <div class="dica">Acesso de teste:<br><b>admin@cepe.com</b> / senha <b>123456</b></div>
+    </div>
+
+    <div id="form-cadastro" class="hidden">
+      <div class="campo">
+        <label>Nome</label>
+        <input type="text" id="cad-nome" placeholder="Seu nome" />
+      </div>
+      <div class="campo">
+        <label>E-mail</label>
+        <input type="email" id="cad-email" placeholder="seu@email.com" />
+      </div>
+      <div class="campo">
+        <label>Senha</label>
+        <input type="password" id="cad-senha" placeholder="mínimo 4 caracteres" />
+      </div>
+      <div class="erro-msg" id="cad-erro"></div>
+      <button class="btn" onclick="fazerCadastro()">Criar conta</button>
+      <button class="link" onclick="mostrarLogin()">Já tenho conta — entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ================= APP ================= -->
+<div id="app">
+  <div class="topbar">
+    <div class="logo-sm"><img src="logo-cepe.png" alt="CEPE" /></div>
+    <h2>Portaria CEPE</h2>
+    <div class="spacer"></div>
+    <span class="user" id="user-nome"></span>
+    <button onclick="sair()">Sair</button>
+  </div>
+  <div class="nav">
+    <button data-aba="registrar" class="ativo" onclick="trocarAba('registrar')">➕ Registrar entrada</button>
+    <button data-aba="dentro" onclick="trocarAba('dentro')">🏢 No local agora</button>
+    <button data-aba="visitantes" onclick="trocarAba('visitantes')">📋 Histórico</button>
+    <button data-aba="dashboard" onclick="trocarAba('dashboard')">📊 Dashboard</button>
+  </div>
+
+  <div class="conteudo">
+
+    <!-- ABA REGISTRAR -->
+    <div id="aba-registrar">
+      <h1 class="secao-titulo">Registrar entrada de visitante</h1>
+      <p class="secao-sub">Busque um visitante já cadastrado ou preencha os dados de um novo.</p>
+
+      <div class="card" style="border-left:4px solid var(--verde)">
+        <label style="display:block;font-weight:600;margin-bottom:6px">👤 Visitante já cadastrado? Busque para reaproveitar os dados</label>
+        <input type="text" id="busca-cadastro" placeholder="🔎 Digite o CPF ou o nome..." oninput="buscarCadastrado()" autocomplete="off"
+               style="width:100%;padding:10px 12px;border:1px solid var(--borda);border-radius:8px" />
+        <div id="resultado-busca" style="margin-top:8px"></div>
+      </div>
+
+      <div class="card">
+        <div class="grid-form">
+          <div class="campo col-span">
+            <label>Foto do visitante</label>
+            <div class="foto-area">
+              <div class="foto-preview" id="foto-preview">Sem foto</div>
+              <div class="foto-botoes">
+                <button type="button" class="btn btn-sec btn-sm" onclick="abrirWebcam()">📷 Usar webcam</button>
+                <button type="button" class="btn btn-sec btn-sm" id="btn-capturar" onclick="capturarFoto()" style="display:none">Capturar</button>
+                <button type="button" class="btn btn-sec btn-sm" onclick="limparFoto()">Limpar</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="campo">
+            <label>Nome *</label>
+            <input type="text" id="v-nome" placeholder="Nome completo" />
+            <div class="erro-msg" id="erro-nome"></div>
+          </div>
+          <div class="campo">
+            <label>CPF *</label>
+            <input type="text" id="v-cpf" placeholder="000.000.000-00" maxlength="14"
+                   oninput="mascaraCPF(this)" onblur="validarCampoCPF()" />
+            <div class="erro-msg" id="erro-cpf"></div>
+          </div>
+          <div class="campo">
+            <label>RG</label>
+            <input type="text" id="v-rg" placeholder="00.000.000-0" />
+          </div>
+          <div class="campo">
+            <label>Telefone</label>
+            <input type="text" id="v-telefone" placeholder="(00) 00000-0000" oninput="mascaraTel(this)" maxlength="15" />
+          </div>
+          <div class="campo">
+            <label>Empresa</label>
+            <input type="text" id="v-empresa" placeholder="Empresa / Origem" list="lista-empresas" />
+            <datalist id="lista-empresas"></datalist>
+          </div>
+          <div class="campo">
+            <label>Destino / Quem vai visitar</label>
+            <input type="text" id="v-destino" placeholder="Sala, setor, morador..." />
+          </div>
+          <div class="campo col-span">
+            <label>Motivo da visita *</label>
+            <select id="v-motivo">
+              <option value="">Selecione...</option>
+              <option>Reunião</option>
+              <option>Entrega</option>
+              <option>Prestação de serviço</option>
+              <option>Manutenção</option>
+              <option>Visita pessoal</option>
+              <option>Entrevista</option>
+              <option>Outro</option>
+            </select>
+            <div class="erro-msg" id="erro-motivo"></div>
+          </div>
+
+          <!-- Veículo -->
+          <div class="campo col-span">
+            <div class="checkbox-linha">
+              <input type="checkbox" id="v-carro" onchange="toggleVeiculo()" />
+              <label for="v-carro" style="margin:0">🚗 Entrou de carro?</label>
+            </div>
+          </div>
+          <div id="bloco-veiculo" class="col-span hidden">
+            <div class="grid-form">
+              <div class="campo">
+                <label>Placa</label>
+                <input type="text" id="v-placa" placeholder="ABC1D23" maxlength="8"
+                       oninput="this.value=this.value.toUpperCase()" onblur="validarPlaca()" />
+                <div class="erro-msg" id="erro-placa"></div>
+              </div>
+              <div class="campo">
+                <label>Modelo</label>
+                <input type="text" id="v-modelo" placeholder="Ex: Gol, Onix..." />
+              </div>
+              <div class="campo">
+                <label>Cor</label>
+                <input type="text" id="v-cor" placeholder="Ex: Prata" />
+              </div>
+            </div>
+          </div>
+
+          <div class="col-span" style="margin-top:6px">
+            <div class="ok-msg" id="registro-ok"></div>
+            <button class="btn" style="max-width:260px" onclick="salvarVisitante()">✓ Registrar entrada</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABA DENTRO -->
+    <div id="aba-dentro" class="hidden">
+      <h1 class="secao-titulo">Visitantes no local agora</h1>
+      <p class="secao-sub" id="dentro-contagem"></p>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div id="tabela-dentro"></div>
+      </div>
+    </div>
+
+    <!-- ABA HISTÓRICO -->
+    <div id="aba-visitantes" class="hidden">
+      <h1 class="secao-titulo">Histórico de visitantes</h1>
+      <p class="secao-sub">Busque por nome ou CPF.</p>
+      <div class="barra-busca">
+        <input type="text" id="busca" placeholder="🔎 Buscar por nome ou CPF..." oninput="renderHistorico()" />
+        <button class="btn btn-sec btn-sm" onclick="exportarCSV()">⬇ Exportar CSV</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden">
+        <div id="tabela-historico"></div>
+      </div>
+    </div>
+
+    <!-- ABA DASHBOARD -->
+    <div id="aba-dashboard" class="hidden">
+      <h1 class="secao-titulo">Dashboard</h1>
+      <p class="secao-sub">Visão geral dos visitantes e veículos.</p>
+
+      <div class="kpis" id="kpis"></div>
+
+      <div class="toolbar">
+        <button class="btn btn-sec btn-sm" onclick="gerarDadosExemplo()">✨ Gerar dados de exemplo</button>
+        <button class="btn btn-sec btn-sm btn-perigo" style="color:#fff" onclick="limparTudo()">🗑 Limpar todos os dados</button>
+      </div>
+
+      <div class="grid2">
+        <div class="card"><b>Visitantes por mês (12 meses)</b><div class="chart-box"><canvas id="c-mes"></canvas></div></div>
+        <div class="card"><b>Visitantes por dia (30 dias)</b><div class="chart-box"><canvas id="c-dia"></canvas></div></div>
+        <div class="card"><b>Horários de pico</b><div class="chart-box"><canvas id="c-hora"></canvas></div></div>
+        <div class="card"><b>Entrada de carros por mês</b><div class="chart-box"><canvas id="c-carro"></canvas></div></div>
+        <div class="card"><b>Top 10 empresas</b><div class="chart-box"><canvas id="c-empresa"></canvas></div></div>
+        <div class="card"><b>Motivos de visita</b><div class="chart-box"><canvas id="c-motivo"></canvas></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<canvas id="canvas-captura" style="display:none"></canvas>
+
+<script>
+/* ===================== ARMAZENAMENTO ===================== */
+const KEY_V='pcepe_visitantes', KEY_U='pcepe_usuarios', KEY_S='pcepe_sessao';
+function getV(){return JSON.parse(localStorage.getItem(KEY_V)||'[]')}
+function setV(a){localStorage.setItem(KEY_V,JSON.stringify(a))}
+function getU(){let u=JSON.parse(localStorage.getItem(KEY_U)||'null');if(!u){u=[{nome:'Administrador',email:'admin@cepe.com',senha:'123456'}];localStorage.setItem(KEY_U,JSON.stringify(u))}return u}
+function setU(a){localStorage.setItem(KEY_U,JSON.stringify(a))}
+
+/* ===================== LOGIN ===================== */
+function mostrarCadastro(){document.getElementById('form-login').classList.add('hidden');document.getElementById('form-cadastro').classList.remove('hidden')}
+function mostrarLogin(){document.getElementById('form-cadastro').classList.add('hidden');document.getElementById('form-login').classList.remove('hidden')}
+function fazerLogin(){
+  const e=val('login-email').toLowerCase(), s=val('login-senha');
+  const u=getU().find(x=>x.email.toLowerCase()===e && x.senha===s);
+  if(!u){document.getElementById('login-erro').textContent='E-mail ou senha incorretos.';return}
+  localStorage.setItem(KEY_S,JSON.stringify({nome:u.nome,email:u.email}));
+  entrarApp();
+}
+function fazerCadastro(){
+  const n=val('cad-nome'),e=val('cad-email').toLowerCase(),s=val('cad-senha');
+  const err=document.getElementById('cad-erro');
+  if(!n||!e||!s){err.textContent='Preencha todos os campos.';return}
+  if(s.length<4){err.textContent='A senha deve ter ao menos 4 caracteres.';return}
+  const us=getU();
+  if(us.find(x=>x.email.toLowerCase()===e)){err.textContent='Já existe conta com esse e-mail.';return}
+  us.push({nome:n,email:e,senha:s});setU(us);
+  localStorage.setItem(KEY_S,JSON.stringify({nome:n,email:e}));entrarApp();
+}
+function sair(){localStorage.removeItem(KEY_S);location.reload()}
+function entrarApp(){
+  const s=JSON.parse(localStorage.getItem(KEY_S)||'null');if(!s)return;
+  document.getElementById('tela-login').style.display='none';
+  document.getElementById('app').style.display='block';
+  document.getElementById('user-nome').textContent='👤 '+s.nome;
+  trocarAba('registrar');
+}
+
+/* ===================== NAVEGAÇÃO ===================== */
+function trocarAba(aba){
+  ['registrar','dentro','visitantes','dashboard'].forEach(a=>{
+    document.getElementById('aba-'+a).classList.toggle('hidden',a!==aba);
+  });
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('ativo',b.dataset.aba===aba));
+  if(aba==='dentro')renderDentro();
+  if(aba==='visitantes')renderHistorico();
+  if(aba==='dashboard')renderDashboard();
+  if(aba==='registrar')atualizarEmpresas();
+}
+
+/* ===================== VALIDAÇÃO CPF ===================== */
+function validarCPF(cpf){
+  cpf=(cpf||'').replace(/\D/g,'');
+  if(cpf.length!==11)return false;
+  if(/^(\d)\1{10}$/.test(cpf))return false; // todos iguais
+  let soma=0;
+  for(let i=0;i<9;i++)soma+=parseInt(cpf[i])*(10-i);
+  let d1=11-(soma%11); if(d1>=10)d1=0;
+  if(d1!==parseInt(cpf[9]))return false;
+  soma=0;
+  for(let i=0;i<10;i++)soma+=parseInt(cpf[i])*(11-i);
+  let d2=11-(soma%11); if(d2>=10)d2=0;
+  return d2===parseInt(cpf[10]);
+}
+function mascaraCPF(el){
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  v=v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+  el.value=v;
+}
+function validarCampoCPF(){
+  const cpf=val('v-cpf'), err=document.getElementById('erro-cpf');
+  if(!cpf){err.textContent='';return true}
+  if(!validarCPF(cpf)){err.textContent='⚠ CPF inválido';return false}
+  // duplicado?
+  const dig=cpf.replace(/\D/g,'');
+  const existe=getV().find(v=>v.cpf.replace(/\D/g,'')===dig);
+  err.style.color = existe ? '#92400e' : 'var(--vermelho)';
+  err.textContent = existe ? 'ℹ Visitante já cadastrado anteriormente' : '';
+  return true;
+}
+function mascaraTel(el){
+  let v=el.value.replace(/\D/g,'').slice(0,11);
+  if(v.length>10)v=v.replace(/(\d{2})(\d{5})(\d{4})/,'($1) $2-$3');
+  else if(v.length>6)v=v.replace(/(\d{2})(\d{4})(\d{0,4})/,'($1) $2-$3');
+  else if(v.length>2)v=v.replace(/(\d{2})(\d{0,5})/,'($1) $2');
+  else if(v.length>0)v=v.replace(/(\d{0,2})/,'($1');
+  el.value=v;
+}
+
+/* ===================== VALIDAÇÃO PLACA ===================== */
+function placaValida(p){p=(p||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return /^[A-Z]{3}[0-9][0-9A-Z][0-9]{2}$/.test(p)}
+function validarPlaca(){
+  const p=val('v-placa'),err=document.getElementById('erro-placa');
+  if(!p){err.textContent='';return}
+  err.textContent = placaValida(p)?'':'⚠ Placa inválida (use ABC1234 ou ABC1D23)';
+}
+function toggleVeiculo(){document.getElementById('bloco-veiculo').classList.toggle('hidden',!document.getElementById('v-carro').checked)}
+
+/* ===================== FOTO / WEBCAM ===================== */
+let stream=null, fotoBase64='';
+async function abrirWebcam(){
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:true});
+    const pv=document.getElementById('foto-preview');
+    pv.innerHTML='<video id="webcam" autoplay playsinline></video>';
+    document.getElementById('webcam').srcObject=stream;
+    document.getElementById('btn-capturar').style.display='block';
+  }catch(e){
+    alert('Não foi possível abrir a webcam.\n\nVerifique se:\n- o computador tem uma webcam conectada;\n- você permitiu o acesso à câmera quando o navegador perguntou;\n- o site está aberto por http(s) ou localhost (não como arquivo).');
+  }
+}
+function capturarFoto(){
+  const v=document.getElementById('webcam');if(!v)return;
+  const c=document.getElementById('canvas-captura');
+  c.width=v.videoWidth;c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  fotoBase64=c.toDataURL('image/jpeg',0.7);
+  pararWebcam();mostrarFoto();
+  document.getElementById('btn-capturar').style.display='none';
+}
+function mostrarFoto(){
+  const pv=document.getElementById('foto-preview');
+  pv.innerHTML = fotoBase64 ? '<img src="'+fotoBase64+'">' : 'Sem foto';
+}
+function pararWebcam(){if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}}
+function limparFoto(){pararWebcam();fotoBase64='';document.getElementById('btn-capturar').style.display='none';mostrarFoto()}
+
+/* ===================== SALVAR ===================== */
+function val(id){return document.getElementById(id).value.trim()}
+function salvarVisitante(){
+  let ok=true;
+  const setErr=(id,msg)=>{document.getElementById(id).textContent=msg;if(msg)ok=false};
+  setErr('erro-nome', val('v-nome')?'':'Informe o nome');
+  setErr('erro-motivo', val('v-motivo')?'':'Selecione o motivo');
+  const cpf=val('v-cpf');
+  if(!cpf){setErr('erro-cpf','Informe o CPF')}
+  else if(!validarCPF(cpf)){setErr('erro-cpf','⚠ CPF inválido')}
+  else{document.getElementById('erro-cpf').textContent=''}
+  const carro=document.getElementById('v-carro').checked;
+  if(carro && val('v-placa') && !placaValida(val('v-placa'))){setErr('erro-placa','⚠ Placa inválida')}
+  if(!ok)return;
+
+  const reg={
+    id:Date.now()+'-'+Math.floor(Math.random()*1000),
+    nome:val('v-nome'), cpf:cpf, rg:val('v-rg'), telefone:val('v-telefone'),
+    empresa:val('v-empresa'), destino:val('v-destino'), motivo:val('v-motivo'),
+    foto:fotoBase64,
+    entrouDeCarro:carro, placa:carro?val('v-placa'):'', modelo:carro?val('v-modelo'):'', cor:carro?val('v-cor'):'',
+    entrada:new Date().toISOString(), saida:null
+  };
+  const arr=getV();arr.push(reg);setV(arr);
+  limparFormulario();
+  const ok2=document.getElementById('registro-ok');
+  ok2.textContent='✓ Entrada registrada com sucesso!';
+  setTimeout(()=>ok2.textContent='',3500);
+}
+function limparFormulario(){
+  ['v-nome','v-cpf','v-rg','v-telefone','v-empresa','v-destino','v-placa','v-modelo','v-cor'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('v-motivo').value='';
+  document.getElementById('v-carro').checked=false;toggleVeiculo();
+  limparFoto();
+  ['erro-nome','erro-cpf','erro-motivo','erro-placa'].forEach(id=>document.getElementById(id).textContent='');
+  document.getElementById('busca-cadastro').value='';
+  document.getElementById('resultado-busca').innerHTML='';
+}
+function atualizarEmpresas(){
+  const dl=document.getElementById('lista-empresas');
+  const emp=[...new Set(getV().map(v=>v.empresa).filter(Boolean))];
+  dl.innerHTML=emp.map(e=>'<option value="'+e.replace(/"/g,'')+'">').join('');
+}
+
+/* ===================== BUSCAR VISITANTE JÁ CADASTRADO ===================== */
+// devolve 1 registro (o mais recente) por pessoa, agrupando pelo CPF
+function pessoasCadastradas(){
+  const map={};
+  getV().forEach(v=>{
+    const k=(v.cpf||'').replace(/\D/g,'');
+    if(k && (!map[k] || v.entrada>map[k].entrada)) map[k]=v;
+  });
+  return Object.values(map);
+}
+function buscarCadastrado(){
+  const raw=document.getElementById('busca-cadastro').value.trim();
+  const box=document.getElementById('resultado-busca');
+  if(raw.length<2){box.innerHTML='';return}
+  const q=raw.toLowerCase(), qd=raw.replace(/\D/g,'');
+  let res=pessoasCadastradas().filter(p=>
+    p.nome.toLowerCase().includes(q) || (qd.length>=3 && p.cpf.replace(/\D/g,'').includes(qd))
+  ).sort((a,b)=>a.nome.localeCompare(b.nome)).slice(0,6);
+  if(!res.length){
+    box.innerHTML='<div style="color:#6b7280;font-size:13px;padding:6px 2px">Nenhum visitante cadastrado encontrado. Preencha os dados abaixo para cadastrar um novo.</div>';
+    return;
+  }
+  box.innerHTML=res.map(p=>{
+    const cpfDig=p.cpf.replace(/\D/g,'');
+    const foto=p.foto?'<img src="'+p.foto+'" style="width:40px;height:40px;border-radius:50%;object-fit:cover">':'<div style="width:40px;height:40px;border-radius:50%;background:#e5e7eb"></div>';
+    return '<div style="display:flex;align-items:center;gap:12px;padding:8px;border:1px solid var(--borda);border-radius:8px;margin-bottom:6px">'+
+      foto+
+      '<div style="flex:1"><b>'+esc(p.nome)+'</b><br><small style="color:#6b7280">'+esc(p.cpf)+(p.empresa?' • '+esc(p.empresa):'')+'</small></div>'+
+      '<button type="button" class="btn btn-sm" onclick="preencherDeCadastro(\''+cpfDig+'\')">Usar dados</button></div>';
+  }).join('');
+}
+function preencherDeCadastro(cpfDig){
+  const p=pessoasCadastradas().find(x=>x.cpf.replace(/\D/g,'')===cpfDig);
+  if(!p)return;
+  document.getElementById('v-nome').value=p.nome||'';
+  document.getElementById('v-cpf').value=p.cpf||'';
+  document.getElementById('v-rg').value=p.rg||'';
+  document.getElementById('v-telefone').value=p.telefone||'';
+  document.getElementById('v-empresa').value=p.empresa||'';
+  if(p.foto){fotoBase64=p.foto;mostrarFoto();}
+  document.getElementById('busca-cadastro').value='';
+  document.getElementById('resultado-busca').innerHTML=
+    '<div style="color:#166534;font-size:13px;padding:6px 2px">✓ Dados de <b>'+esc(p.nome)+'</b> carregados. Agora confira o motivo e o veículo desta visita e clique em <b>Registrar entrada</b>.</div>';
+  ['erro-nome','erro-cpf','erro-motivo'].forEach(id=>document.getElementById(id).textContent='');
+  document.getElementById('v-motivo').focus();
+}
+
+/* ===================== DENTRO AGORA ===================== */
+function registrarSaida(id){
+  const arr=getV();const v=arr.find(x=>x.id===id);
+  if(v && confirm('Registrar saída de '+v.nome+'?')){v.saida=new Date().toISOString();setV(arr);renderDentro()}
+}
+function fmtHora(iso){const d=new Date(iso);return d.toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}
+function fotoTd(v){return v.foto?'<img class="mini-foto" src="'+v.foto+'">':'<div class="mini-foto"></div>'}
+function renderDentro(){
+  const dentro=getV().filter(v=>!v.saida).sort((a,b)=>b.entrada.localeCompare(a.entrada));
+  document.getElementById('dentro-contagem').textContent=dentro.length+' visitante(s) no local neste momento.';
+  const box=document.getElementById('tabela-dentro');
+  if(!dentro.length){box.innerHTML='<div class="vazio">Ninguém no local agora. 🎉</div>';return}
+  box.innerHTML='<table><thead><tr><th></th><th>Nome</th><th>Empresa</th><th>Destino</th><th>Veículo</th><th>Entrada</th><th></th></tr></thead><tbody>'+
+    dentro.map(v=>'<tr><td>'+fotoTd(v)+'</td><td><b>'+esc(v.nome)+'</b><br><small style="color:#6b7280">'+esc(v.cpf)+'</small></td>'+
+    '<td>'+esc(v.empresa||'-')+'</td><td>'+esc(v.destino||'-')+'</td>'+
+    '<td>'+(v.entrouDeCarro?('🚗 '+esc(v.placa||'')):'—')+'</td>'+
+    '<td>'+fmtHora(v.entrada)+'</td>'+
+    '<td><button class="btn btn-perigo btn-sm" onclick="registrarSaida(\''+v.id+'\')">Saída</button></td></tr>').join('')+
+    '</tbody></table>';
+}
+
+/* ===================== HISTÓRICO ===================== */
+function renderHistorico(){
+  const q=val('busca').toLowerCase().replace(/\D/g,'');
+  const qt=val('busca').toLowerCase();
+  let arr=getV().slice().sort((a,b)=>b.entrada.localeCompare(a.entrada));
+  if(qt){arr=arr.filter(v=>v.nome.toLowerCase().includes(qt)||v.cpf.replace(/\D/g,'').includes(q))}
+  const box=document.getElementById('tabela-historico');
+  if(!arr.length){box.innerHTML='<div class="vazio">Nenhum visitante encontrado.</div>';return}
+  box.innerHTML='<table><thead><tr><th></th><th>Nome</th><th>CPF</th><th>Empresa</th><th>Motivo</th><th>Veículo</th><th>Entrada</th><th>Saída</th><th>Status</th></tr></thead><tbody>'+
+    arr.map(v=>'<tr><td>'+fotoTd(v)+'</td><td><b>'+esc(v.nome)+'</b></td><td>'+esc(v.cpf)+'</td>'+
+    '<td>'+esc(v.empresa||'-')+'</td><td>'+esc(v.motivo||'-')+'</td>'+
+    '<td>'+(v.entrouDeCarro?('🚗 '+esc(v.placa||'')):'—')+'</td>'+
+    '<td>'+fmtHora(v.entrada)+'</td><td>'+(v.saida?fmtHora(v.saida):'-')+'</td>'+
+    '<td>'+(v.saida?'<span class="tag tag-saiu">Saiu</span>':'<span class="tag tag-dentro">No local</span>')+'</td></tr>').join('')+
+    '</tbody></table>';
+}
+function esc(s){return (s||'').toString().replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]))}
+
+function exportarCSV(){
+  const arr=getV();
+  if(!arr.length){alert('Não há dados para exportar.');return}
+  const cab=['Nome','CPF','RG','Telefone','Empresa','Destino','Motivo','Entrou de carro','Placa','Modelo','Cor','Entrada','Saida'];
+  const linhas=arr.map(v=>[v.nome,v.cpf,v.rg,v.telefone,v.empresa,v.destino,v.motivo,v.entrouDeCarro?'Sim':'Não',v.placa,v.modelo,v.cor,v.entrada,v.saida||''].map(c=>'"'+(c||'').toString().replace(/"/g,'""')+'"').join(','));
+  const csv='﻿'+[cab.join(','),...linhas].join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='visitantes-cepe.csv';a.click();
+}
+
+/* ===================== DASHBOARD ===================== */
+let charts={};
+function renderDashboard(){
+  const arr=getV();
+  const agora=new Date();
+  const hojeStr=agora.toDateString();
+  const mesAtual=agora.getFullYear()+'-'+agora.getMonth();
+  const ms30=Date.now()-30*864e5;
+  const hoje=arr.filter(v=>new Date(v.entrada).toDateString()===hojeStr).length;
+  const mes=arr.filter(v=>{const d=new Date(v.entrada);return d.getFullYear()+'-'+d.getMonth()===mesAtual}).length;
+  const dentro=arr.filter(v=>!v.saida).length;
+  const ult30=arr.filter(v=>new Date(v.entrada).getTime()>=ms30).length;
+  const media=(ult30/30).toFixed(1);
+  const carrosHoje=arr.filter(v=>v.entrouDeCarro && new Date(v.entrada).toDateString()===hojeStr).length;
+  const carrosMes=arr.filter(v=>{const d=new Date(v.entrada);return v.entrouDeCarro && d.getFullYear()+'-'+d.getMonth()===mesAtual}).length;
+
+  document.getElementById('kpis').innerHTML=[
+    ['Total de visitantes',arr.length,''],
+    ['Visitantes hoje',hoje,''],
+    ['Neste mês',mes,''],
+    ['No local agora',dentro,'azul'],
+    ['Média/dia (30d)',media,'azul'],
+    ['Carros hoje',carrosHoje,'amarelo'],
+    ['Carros no mês',carrosMes,'amarelo'],
+  ].map(k=>'<div class="kpi '+k[2]+'"><div class="num">'+k[1]+'</div><div class="lbl">'+k[0]+'</div></div>').join('');
+
+  // ---- por mês (12) ----
+  const labMes=[],valMes=[],valCarro=[];
+  for(let i=11;i>=0;i--){
+    const d=new Date(agora.getFullYear(),agora.getMonth()-i,1);
+    const chave=d.getFullYear()+'-'+d.getMonth();
+    labMes.push(d.toLocaleDateString('pt-BR',{month:'short',year:'2-digit'}));
+    valMes.push(arr.filter(v=>{const x=new Date(v.entrada);return x.getFullYear()+'-'+x.getMonth()===chave}).length);
+    valCarro.push(arr.filter(v=>{const x=new Date(v.entrada);return v.entrouDeCarro && x.getFullYear()+'-'+x.getMonth()===chave}).length);
+  }
+  // ---- por dia (30) ----
+  const labDia=[],valDia=[];
+  for(let i=29;i>=0;i--){
+    const d=new Date();d.setDate(d.getDate()-i);
+    labDia.push(d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}));
+    const ds=d.toDateString();
+    valDia.push(arr.filter(v=>new Date(v.entrada).toDateString()===ds).length);
+  }
+  // ---- por hora ----
+  const valHora=new Array(24).fill(0);
+  arr.forEach(v=>valHora[new Date(v.entrada).getHours()]++);
+  const labHora=valHora.map((_,h)=>h+'h');
+  // ---- empresas ----
+  const empCount={};arr.forEach(v=>{if(v.empresa){empCount[v.empresa]=(empCount[v.empresa]||0)+1}});
+  const empTop=Object.entries(empCount).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  // ---- motivos ----
+  const motCount={};arr.forEach(v=>{const m=v.motivo||'Não informado';motCount[m]=(motCount[m]||0)+1});
+  const mot=Object.entries(motCount).sort((a,b)=>b[1]-a[1]);
+
+  const VERDE='#157347', AZUL='#2563eb', AMARELO='#f59e0b';
+  const cores=['#157347','#2563eb','#f59e0b','#dc2626','#7c3aed','#0891b2','#db2777','#65a30d','#ea580c','#475569'];
+  desenhar('c-mes','bar',labMes,[{label:'Visitantes',data:valMes,backgroundColor:VERDE,borderRadius:4}]);
+  desenhar('c-dia','line',labDia,[{label:'Visitantes',data:valDia,borderColor:VERDE,backgroundColor:'rgba(21,115,71,.1)',fill:true,tension:.3}]);
+  desenhar('c-hora','bar',labHora,[{label:'Entradas',data:valHora,backgroundColor:AZUL,borderRadius:3}]);
+  desenhar('c-carro','bar',labMes,[{label:'Carros',data:valCarro,backgroundColor:AMARELO,borderRadius:4}]);
+  desenhar('c-empresa','bar',empTop.map(e=>e[0]),[{label:'Visitas',data:empTop.map(e=>e[1]),backgroundColor:VERDE,borderRadius:3}],{indexAxis:'y'});
+  desenhar('c-motivo','doughnut',mot.map(m=>m[0]),[{data:mot.map(m=>m[1]),backgroundColor:cores}],{plugins:{legend:{position:'right'}}});
+}
+function desenhar(id,tipo,labels,datasets,extra){
+  if(typeof Chart==='undefined'){document.getElementById(id).parentNode.innerHTML='<div class="vazio">Gráficos precisam de internet (Chart.js)</div>';return}
+  if(charts[id])charts[id].destroy();
+  charts[id]=new Chart(document.getElementById(id),{
+    type:tipo,data:{labels,datasets},
+    options:Object.assign({responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:tipo==='doughnut'}},
+      scales:tipo==='doughnut'?{}:{y:{beginAtZero:true,ticks:{precision:0}}}},extra||{})
+  });
+}
+
+/* ===================== DADOS DE EXEMPLO ===================== */
+function gerarDadosExemplo(){
+  if(!confirm('Gerar ~60 visitantes de exemplo para você visualizar os gráficos?'))return;
+  const nomes=['Ana Souza','Carlos Lima','Marina Reis','João Pedro','Beatriz Alves','Rafael Costa','Juliana Dias','Pedro Henrique','Camila Rocha','Lucas Martins','Fernanda Gomes','Bruno Carvalho'];
+  const emps=['Correios','Mercado Livre','Sabesp','Eletropaulo','Telefônica','Particular','Construtora ABC','TI Soluções',''];
+  const mots=['Reunião','Entrega','Prestação de serviço','Manutenção','Visita pessoal','Entrevista'];
+  const cores=['Prata','Preto','Branco','Vermelho','Azul'];
+  const modelos=['Gol','Onix','HB20','Corolla','Strada','Kwid'];
+  const arr=getV();
+  for(let i=0;i<60;i++){
+    const d=new Date();
+    d.setDate(d.getDate()-Math.floor(Math.random()*330));
+    d.setHours(7+Math.floor(Math.random()*11),Math.floor(Math.random()*60));
+    const carro=Math.random()<0.4;
+    const saiu=Math.random()<0.85;
+    const saida=saiu?new Date(d.getTime()+(30+Math.random()*240)*60000).toISOString():null;
+    const cpf=gerarCPFValido();
+    arr.push({
+      id:'ex-'+Date.now()+'-'+i,
+      nome:nomes[Math.floor(Math.random()*nomes.length)],
+      cpf:cpf, rg:'', telefone:'',
+      empresa:emps[Math.floor(Math.random()*emps.length)],
+      destino:'', motivo:mots[Math.floor(Math.random()*mots.length)],
+      foto:'',
+      entrouDeCarro:carro,
+      placa:carro?gerarPlaca():'', modelo:carro?modelos[Math.floor(Math.random()*modelos.length)]:'', cor:carro?cores[Math.floor(Math.random()*cores.length)]:'',
+      entrada:d.toISOString(), saida:saida
+    });
+  }
+  setV(arr);renderDashboard();
+  alert('60 visitantes de exemplo gerados! 📊');
+}
+function gerarCPFValido(){
+  let n=[];for(let i=0;i<9;i++)n.push(Math.floor(Math.random()*10));
+  let s=0;for(let i=0;i<9;i++)s+=n[i]*(10-i);let d1=11-(s%11);if(d1>=10)d1=0;n.push(d1);
+  s=0;for(let i=0;i<10;i++)s+=n[i]*(11-i);let d2=11-(s%11);if(d2>=10)d2=0;n.push(d2);
+  return n.join('').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+}
+function gerarPlaca(){
+  const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';const r=a=>a[Math.floor(Math.random()*a.length)];
+  return r(L)+r(L)+r(L)+Math.floor(Math.random()*10)+r(L+'0123456789')+Math.floor(Math.random()*10)+Math.floor(Math.random()*10);
+}
+function limparTudo(){
+  if(confirm('ATENÇÃO: isso apaga TODOS os visitantes registrados. Continuar?')){setV([]);renderDashboard();alert('Dados apagados.')}
+}
+
+/* ===================== INÍCIO ===================== */
+window.addEventListener('DOMContentLoaded',()=>{
+  getU();
+  if(localStorage.getItem(KEY_S))entrarApp();
+  document.getElementById('login-senha').addEventListener('keydown',e=>{if(e.key==='Enter')fazerLogin()});
+});
+</script>
+</body>
+</html>
